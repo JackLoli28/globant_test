@@ -1,0 +1,5 @@
+pyspark
+flask
+psycopg2-binary
+pytest
+requests
