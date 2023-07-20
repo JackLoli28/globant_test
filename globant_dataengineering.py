@@ -71,7 +71,7 @@ def insert_data(table_name, data):
         placeholders = ', '.join(['%s'] * len(data[0]))
         query = f"INSERT INTO {table_name} VALUES ({placeholders})"
 
-        # Replace empty strings with None in the data list
+        # Replace empty strings
         data_with_none = [[None if value == '' else value for value in row] for row in data]
 
         cursor.executemany(query, data_with_none)
@@ -102,7 +102,7 @@ def upload_data():
         decoded_hired_employees = hired_employees_data.read().decode('utf-8')
         hired_employees_data_list = list(csv.reader(decoded_hired_employees.splitlines()))
 
-        create_tables()  # Create tables if they don't exist
+        create_tables()
 
         insert_data('departments', departments_data_list)
         insert_data('jobs', jobs_data_list)
