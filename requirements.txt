@@ -1,5 +1,6 @@
 pyspark
 flask
 psycopg2-binary
+psycopg2
 pytest
 requests

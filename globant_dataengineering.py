@@ -1,5 +1,5 @@
 import csv
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 import psycopg2
 
 app = Flask(__name__)
@@ -30,19 +30,19 @@ def create_tables():
 
         create_departments_table = """
             CREATE TABLE IF NOT EXISTS departments (
-                id SERIAL PRIMARY KEY,
+                id INTEGER PRIMARY KEY,
                 department VARCHAR(100)
             )
         """
         create_jobs_table = """
             CREATE TABLE IF NOT EXISTS jobs (
-                id SERIAL PRIMARY KEY,
+                id INTEGER PRIMARY KEY,
                 job VARCHAR(100)
             )
         """
         create_employees_table = """
             CREATE TABLE IF NOT EXISTS employees (
-                id SERIAL PRIMARY KEY,
+                id INTEGER PRIMARY KEY,
                 name VARCHAR(100),
                 datetime TIMESTAMP,
                 department_id INTEGER,
@@ -112,6 +112,71 @@ def upload_data():
 
     except Exception as e:
         return jsonify({'message': f'Error uploading data: {str(e)}'}), 500
+
+@app.route('/metrics/employees-hired-by-quarter', methods=['GET'])
+def employees_hired_by_quarter():
+    try:
+        connection = create_db_connection()
+        cursor = connection.cursor()
+
+        query = """
+            SELECT d.department, j.job,
+            COUNT(CASE WHEN EXTRACT(QUARTER FROM e.datetime) = 1 THEN 1 ELSE NULL END) AS Q1,
+            COUNT(CASE WHEN EXTRACT(QUARTER FROM e.datetime) = 2 THEN 1 ELSE NULL END) AS Q2,
+            COUNT(CASE WHEN EXTRACT(QUARTER FROM e.datetime) = 3 THEN 1 ELSE NULL END) AS Q3,
+            COUNT(CASE WHEN EXTRACT(QUARTER FROM e.datetime) = 4 THEN 1 ELSE NULL END) AS Q4
+            FROM departments d
+            LEFT JOIN employees e ON d.id = e.department_id
+            LEFT JOIN jobs j ON e.job_id = j.id
+            WHERE EXTRACT(YEAR FROM e.datetime) = 2021
+            GROUP BY d.department, j.job
+            ORDER BY d.department, j.job
+        """
+
+        cursor.execute(query)
+        result = cursor.fetchall()
+
+        cursor.close()
+        connection.close()
+
+        columns = ['department', 'job', 'Q1', 'Q2', 'Q3', 'Q4']
+        data = [dict(zip(columns, row)) for row in result]
+
+        return render_template('endpoint1_template.html', data=data)
+
+    except Exception as e:
+        return jsonify({'message': f'Error fetching data: {str(e)}'}), 500
+
+@app.route('/metrics/departments-with-most-hired', methods=['GET'])
+def departments_with_most_hired():
+    try:
+        connection = create_db_connection()
+        cursor = connection.cursor()
+
+        query = """
+            SELECT d.id, d.department, COUNT(e.id) AS hired
+            FROM departments d
+            LEFT JOIN employees e ON d.id = e.department_id
+            WHERE EXTRACT(YEAR FROM e.datetime) = 2021
+            GROUP BY d.id, d.department
+            HAVING COUNT(e.id) > (SELECT AVG(hired) FROM (SELECT department_id, COUNT(id) AS hired FROM employees WHERE EXTRACT(YEAR FROM datetime) = 2021 GROUP BY department_id) AS t)
+            ORDER BY COUNT(e.id) DESC
+        """
+
+        cursor.execute(query)
+        result = cursor.fetchall()
+
+        cursor.close()
+        connection.close()
+
+        columns = ['id', 'department', 'hired']
+        data = [dict(zip(columns, row)) for row in result]
+
+        return render_template('endpoint2_template.html', data=data)
+
+    except Exception as e:
+        return jsonify({'message': f'Error fetching data: {str(e)}'}), 500
+
 
 if __name__ == '__main__':
     app.run(port=4996)

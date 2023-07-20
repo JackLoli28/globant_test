@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Results</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <h2>Departments with most hired employees</h2>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Department</th>
+            <th>Hired</th>
+        </tr>
+        {% for row in data %}
+        <tr>
+            <td>{{ row.id }}</td>
+            <td>{{ row.department }}</td>
+            <td>{{ row.hired }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
