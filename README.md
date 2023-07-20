@@ -31,7 +31,7 @@ The API provides two endpoints to fetch specific metrics from the database relat
 
 1. Clone the repository:
 
-git clone 
+git clone https://github.com/JackLoli28/globant_test.git
 
 2. Install the required Python packages:
 
